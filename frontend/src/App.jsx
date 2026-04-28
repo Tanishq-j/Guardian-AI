@@ -1,40 +1,50 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Shield } from 'lucide-react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+
+import { AuthProvider, useAuth } from './context/AuthContext';
+import LoadingSpinner from './components/common/LoadingSpinner';
+
+import Login         from './pages/Login';
+import Dashboard     from './pages/Dashboard';
+import Assets        from './pages/Assets';
 import RegisterAsset from './pages/RegisterAsset';
+import Violations    from './pages/Violations';
+import DMCA          from './pages/DMCA';
 
-function App() {
-  return (
-    <BrowserRouter>
-      <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
-        {/* Navigation */}
-        <nav className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-16">
-              <div className="flex items-center">
-                <Shield className="w-8 h-8 text-[#38BDF8]" />
-                <span className="ml-2 text-xl font-bold text-slate-800">
-                  Guardian <span className="text-[#38BDF8]">AI</span>
-                </span>
-              </div>
-            </div>
-          </div>
-        </nav>
-
-        {/* Main Content */}
-        <main className="py-10">
-          <Routes>
-            <Route path="/" element={<RegisterAsset />} />
-            <Route path="/dashboard" element={
-              <div className="text-center p-20 text-slate-500">
-                <h2 className="text-2xl">Dashboard coming in Phase 3</h2>
-              </div>
-            } />
-          </Routes>
-        </main>
+/* ── Protected route wrapper ── */
+function Protected({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+        <LoadingSpinner label="Loading Guardian AI..." />
       </div>
-    </BrowserRouter>
-  );
+    );
+  }
+  return user ? children : <Navigate to="/" replace />;
 }
 
-export default App;
+export default function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+        <Routes>
+          {/* Public */}
+          <Route path="/" element={<Login />} />
+
+          {/* Protected */}
+          <Route path="/dashboard"      element={<Protected><Dashboard /></Protected>} />
+          <Route path="/assets"         element={<Protected><Assets /></Protected>} />
+          <Route path="/assets/register" element={<Protected><RegisterAsset /></Protected>} />
+          <Route path="/violations"     element={<Protected><Violations /></Protected>} />
+          <Route path="/dmca"           element={<Protected><DMCA /></Protected>} />
+
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  );
+}
